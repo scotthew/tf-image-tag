@@ -1,0 +1,14 @@
+services:
+  # https://docs.docker.com/compose/gpu-support/
+  tensorflow:
+    container_name: tf_gpu_1
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
