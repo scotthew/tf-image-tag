@@ -9,7 +9,7 @@ import tensorflow as tf
 
 import tensorflow_hub as hub
 from google.protobuf import text_format
-from object_detection.protos import string_int_label_map_pb2
+from protos import string_int_label_map_pb2
 
 # For downloading the image.
 import matplotlib.pyplot as plt
@@ -27,6 +27,8 @@ from PIL import ImageOps
 
 # For measuring the inference time.
 import time
+
+import json
 
 # Print Tensorflow version
 print(tf.__version__)
@@ -49,6 +51,7 @@ image_urls = [
     # Source: https://commons.wikimedia.org/wiki/File:The_smaller_British_birds_(8053836633).jpg
     "https://upload.wikimedia.org/wikipedia/commons/0/09/The_smaller_British_birds_%288053836633%29.jpg",
 ]
+
 
 # https://tfhub.dev/tensorflow/collections/object_detection/1
 # https: // github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md
@@ -96,6 +99,17 @@ all_modules = {
         },
     },
 }
+
+def load_image_json():
+  image_file_path = os.getenv('IMAGE_FILE_PATH')
+  if image_file_path is not None:
+    print("loading image from file path: ", image_file_path)
+    with open(image_file_path, 'r') as fh:
+      image_urls_json = json.load(fh)
+    
+    return image_urls + image_urls_json['images']
+  else:
+    return image_urls
 
 def plot_to_image(figure):
   """Converts the matplotlib plot specified by 'figure' to a PNG image and
@@ -313,7 +327,9 @@ def load_category_index(path_to_labels=None):
 def run_detect_all():
   # Download and resize all images.
   image_paths = []
-  for image_url in image_urls:
+  all_image_urls = load_image_json()
+
+  for image_url in all_image_urls:
     image_paths.append(download_and_resize_image(image_url, 1280, 720))
 
   # Run detection for all modules

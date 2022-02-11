@@ -1,6 +1,8 @@
 services:
   # https://docs.docker.com/compose/gpu-support/
   tensorflow:
+    env_file:
+      - .env
     container_name: tf_gpu_1
     build:
       context: ./
