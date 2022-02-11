@@ -1,4 +1,5 @@
 # https://www.tensorflow.org/hub/tutorials/object_detection
+# https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2.md#python-package-installation
 # For running inference on the TF-Hub module.
 import datetime
 import io
@@ -7,6 +8,8 @@ from pickletools import uint8
 import tensorflow as tf
 
 import tensorflow_hub as hub
+from google.protobuf import text_format
+from object_detection.protos import string_int_label_map_pb2
 
 # For downloading the image.
 import matplotlib.pyplot as plt
@@ -48,6 +51,7 @@ image_urls = [
 ]
 
 # https://tfhub.dev/tensorflow/collections/object_detection/1
+# https: // github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md
 all_modules = {
     # FasterRCNN+InceptionResNet V2: high accuracy,
     "inception_resnet_v2": {
@@ -59,6 +63,8 @@ all_modules = {
             "dtype": tf.float32,
             "min_score": 0.1,
             "max_boxes": 20,
+            "result_type": 1,
+            "path_to_labels": None,
         },
     },
     # ssd+mobilenet V2: small and fast.
@@ -71,8 +77,11 @@ all_modules = {
             "dtype": tf.float32,
             "min_score": 0.1,
             "max_boxes": 20,
+            "result_type": 1,
+            "path_to_labels": None,
         },
     },
+    # SSD with EfficientNet-b7 + BiFPN feature extractor, shared box predictor and focal loss
     "efficientdet_d7": {
         "module_handle": "https://tfhub.dev/tensorflow/efficientdet/d7/1",
         "signatures": None,
@@ -82,6 +91,8 @@ all_modules = {
             "dtype": tf.uint8,
             "min_score": 0.1,
             "max_boxes": 20,
+            "result_type": 2,
+            "path_to_labels": os.path.join('data', 'mscoco_label_map.pbtxt'),
         },
     },
 }
@@ -170,7 +181,7 @@ def draw_bounding_box_on_image(image,
     text_bottom -= text_height - 2 * margin
 
 
-def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
+def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1, category_index=None):
   """Overlay labeled boxes on an image with formatted scores and label names."""
   colors = list(ImageColor.colormap.values())
 
@@ -180,22 +191,22 @@ def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
   except IOError:
     print("Font not found, using default font.")
     font = ImageFont.load_default()
-    
-  normalized_boxes = boxes
-  print(type(boxes))
-  
-  for i in range(min(normalized_boxes.shape[0], max_boxes)):
+
+  for i in range(min(boxes.shape[0], max_boxes)):
     score = scores[i]
-    if type(score) == np.ndarray:
-      # Handle if scores is 2d array.
-      score = scores[0][i]
-
-
+    box = boxes[i]
+    if category_index is not None:
+      class_name = category_index[class_names[i]]['name']
+      class_string = str(class_name)
+    else:
+      class_name = class_names[i]
+      class_string = class_name.decode("ascii")
+      
     if score >= min_score:
-      ymin, xmin, ymax, xmax = tuple(normalized_boxes[i])
-      display_str = "{}: {}%".format(class_names[i].decode("ascii"),
+      ymin, xmin, ymax, xmax = tuple(box)
+      display_str = "{}: {}%".format(class_string,
                                      int(100 * score))
-      color = colors[hash(class_names[i]) % len(colors)]
+      color = colors[hash(class_name) % len(colors)]
       image_pil = Image.fromarray(np.uint8(image)).convert("RGB")
       draw_bounding_box_on_image(
           image_pil,
@@ -230,7 +241,7 @@ def save_image(image_path, image_np):
     return
 
 
-def run_detector(detector, path, module_values):
+def run_detector(detector, path, module_values, category_index=None):
   img = load_img(path)
 
   converted_img  = tf.image.convert_image_dtype(img, module_values["dtype"])[tf.newaxis, ...]
@@ -240,18 +251,31 @@ def run_detector(detector, path, module_values):
 
   result = {key:value.numpy() for key,value in result.items()}
 
+  if module_values["result_type"] == 1:
+    normalized_boxes = result["detection_boxes"]
+    normalized_scores = result[module_values["score_key"]]
+    normalized_class_names = result[module_values["class_key"]]
+    normalized_detection_scores = result["detection_scores"]
+  else:
+    normalized_boxes = result["detection_boxes"][0]
+    normalized_scores = result[module_values["score_key"]][0]
+    normalized_class_names = result[module_values["class_key"]][0]
+    normalized_detection_scores = result["detection_scores"][0]
+
+
   #print("detection scores: ", result["detection_scores"])
-  print("Found %d objects." % len(result["detection_scores"]))
+  print("Found %d objects." % len(normalized_detection_scores))
   print("Inference time: ", end_time-start_time)
 
   image_with_boxes = draw_boxes(
-      image=img.numpy(),
-      boxes=result["detection_boxes"],
-      class_names=result[module_values["class_key"]],
-      scores=result[module_values["score_key"]],
-      max_boxes=module_values["max_boxes"],
-      min_score=module_values["min_score"],
-      )
+    image=img.numpy(),
+    boxes=normalized_boxes,
+    class_names=normalized_class_names,
+    scores=normalized_scores,
+    max_boxes=module_values["max_boxes"],
+    min_score=module_values["min_score"],
+    category_index=category_index,
+  )
   save_image(path, image_with_boxes)
 
   # TODO: Combine images into summary
@@ -261,11 +285,30 @@ def run_detector(detector, path, module_values):
   #  tf.summary.image(filename, plot_to_image(figure), step=0)
 
 
-def detect_img(image_path, module_values):
+def detect_img(image_path, module_values, category_index=None):
   start_time = time.time()
-  run_detector(detector, image_path, module_values)
+  run_detector(detector, image_path, module_values, category_index)
   end_time = time.time()
   print("Inference time:", end_time-start_time)
+
+
+def load_category_index(path_to_labels=None):
+  if path_to_labels is not None:
+    with open(path_to_labels, 'r') as f:
+      label_map_string = f.read()
+      label_map = string_int_label_map_pb2.StringIntLabelMap()
+      text_format.Merge(label_map_string, label_map)
+
+    category_index = {}
+
+    for item in label_map.item:
+      name = item.display_name
+      category = {'id': item.id, 'name': name}
+      category_index[item.id] = category
+  else:
+    category_index = None
+  return category_index
+
 
 def run_detect_all():
   # Download and resize all images.
@@ -294,9 +337,11 @@ def run_detect_all():
         key,
         datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
     )
+    
+    category_index = load_category_index(module_values["path_to_labels"])
 
     for image_path in image_paths:
-      detect_img(image_path, module_values)
+      detect_img(image_path, module_values, category_index)
 
 
 run_detect_all()
