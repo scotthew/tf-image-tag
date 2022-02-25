@@ -54,7 +54,7 @@ image_urls = [
 
 
 # https://tfhub.dev/tensorflow/collections/object_detection/1
-# https: // github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md
+# https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2_detection_zoo.md
 all_modules = {
     # FasterRCNN+InceptionResNet V2: high accuracy,
     "inception_resnet_v2": {
