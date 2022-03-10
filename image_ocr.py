@@ -17,7 +17,7 @@ import keras_ocr
 
 PATH_TO_TEST_IMAGES_OUT_DIR = os.path.join(
     'test_images_out',
-    'ocr',
+    'keras_ocr',
     datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
 )
 
@@ -39,16 +39,33 @@ for url in all_image_urls:
     except:
         print("failed to load image: ", url)
 
+#images = [test_images[0], test_images[1]]
+images = test_images
 
 # Each list of predictions in prediction_groups is a list of
 # (word, box) tuples.
-images = [test_images[0], test_images[1]]
-prediction_groups = pipeline.recognize(test_images)
+#prediction_groups = pipeline.recognize(test_images)
+prediction_groups = pipeline.recognize(test_images, detection_kwargs={
+                                       "batch_size": 1}, recognition_kwargs={"batch_size": 1})
 
-print(type(images))
+# for i in prediction_groups:
+#     for y in i:
+#         print(y[0])
 
 # Plot the predictions
 fig, axs = plt.subplots(nrows=len(images), figsize=(20, 20))
-for ax, image, predictions in zip(axs, images, prediction_groups):
+for i, (ax, image, predictions) in enumerate(zip(axs, images, prediction_groups)):
     keras_ocr.tools.drawAnnotations(
         image=image, predictions=predictions, ax=ax)
+    # print(len(predictions))
+    # print(type(predictions))
+    # print(predictions)
+    # print(type(image))
+    # print(type(ax))
+    print(i, all_image_urls[i])
+    for prediction in predictions:
+        print(prediction[0])
+    # image_utils.save_image(PATH_TO_TEST_IMAGES_OUT_DIR,
+    #                        f'{i}.jpg', image)
+    image_utils.save_fig(PATH_TO_TEST_IMAGES_OUT_DIR,
+                         f'{i}.png', ax)

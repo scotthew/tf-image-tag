@@ -41,3 +41,9 @@ def save_image(path, image_path, image_np):
     out_img = Image.fromarray(image_np)
     out_img.save(out_image_path, "jpeg")
     return
+
+def save_fig(path, image_path, ax):
+    out_image_path = os.path.join(path, os.path.basename(image_path))
+    print("Out Image Name: %s" % (out_image_path))
+    ax.savefig(out_image_path, format='png', dpi=300)
+    return
