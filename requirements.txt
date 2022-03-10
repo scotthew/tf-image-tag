@@ -3,4 +3,4 @@ tensorflow-hub
 matplotlib
 tensorboard
 keras-ocr
-opencv-python-headless
+opencv-python-headless==4.5.4.60

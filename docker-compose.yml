@@ -15,12 +15,12 @@ services:
           devices:
             - capabilities: [gpu]
 
-  tensorflow-jupyter:
-    env_file:
-      - .env
-    container_name: tf_jupyter_1
-    build:
-      context: ./
-      dockerfile: Dockerfile-jupyter
-    volumes:
-      - ./:/workspace
+  # tensorflow-jupyter:
+  #   env_file:
+  #     - .env
+  #   container_name: tf_jupyter_1
+  #   build:
+  #     context: ./
+  #     dockerfile: Dockerfile-jupyter
+  #   volumes:
+  #     - ./:/workspace

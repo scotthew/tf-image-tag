@@ -14,6 +14,7 @@ import datetime
 
 import keras_ocr
 
+
 PATH_TO_TEST_IMAGES_OUT_DIR = os.path.join(
     'test_images_out',
     'ocr',
@@ -25,6 +26,10 @@ PATH_TO_TEST_IMAGES_OUT_DIR = os.path.join(
 pipeline = keras_ocr.pipeline.Pipeline()
 
 all_image_urls = image_utils.load_image_json()
+# all_image_urls = [
+#     'https://upload.wikimedia.org/wikipedia/commons/b/bd/Army_Reserves_Recruitment_Banner_MOD_45156284.jpg',
+#     'https://upload.wikimedia.org/wikipedia/commons/b/b4/EUBanana-500x112.jpg'
+# ]
 
 # Get a set of three example images
 test_images = []
@@ -37,11 +42,13 @@ for url in all_image_urls:
 
 # Each list of predictions in prediction_groups is a list of
 # (word, box) tuples.
-images = [test_images[0]]
-prediction_groups = pipeline.recognize(images)
+images = [test_images[0], test_images[1]]
+prediction_groups = pipeline.recognize(test_images)
+
+print(type(images))
 
 # Plot the predictions
 fig, axs = plt.subplots(nrows=len(images), figsize=(20, 20))
 for ax, image, predictions in zip(axs, images, prediction_groups):
-    keras_ocr.tools.drawAnnotations(image=image, predictions=predictions, ax=ax)
-    print(type(image))
+    keras_ocr.tools.drawAnnotations(
+        image=image, predictions=predictions, ax=ax)
