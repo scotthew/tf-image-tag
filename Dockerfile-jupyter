@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:latest-jupyter
 
 #TODO: Set any environment variables
 WORKDIR /workspace

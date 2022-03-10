@@ -28,7 +28,7 @@ from PIL import ImageOps
 # For measuring the inference time.
 import time
 
-import json
+import image_utils
 
 # Print Tensorflow version
 print(tf.__version__)
@@ -36,21 +36,6 @@ print(tf.__version__)
 # Check available GPU devices.
 print("The following GPU devices are available: %s" %
       tf.test.gpu_device_name())
-
-image_urls = [
-    # Source: https://commons.wikimedia.org/wiki/File:Baegle_dwa.jpg
-    "https://upload.wikimedia.org/wikipedia/commons/f/fc/Baegle_dwa.jpg",
-    # By "Michael Miley, Source: https://www.flickr.com/photos/mike_miley/4678754542/in/photolist-88rQHL-88oBVp-88oC2B-88rS6J-88rSqm-88oBLv-88oBC4
-    "https://live.staticflickr.com/4009/4678754542_fd42c6bbb8_b.jpg",
-    # By Heiko Gorski, Source: https://commons.wikimedia.org/wiki/File:Naxos_Taverna.jpg
-    "https://upload.wikimedia.org/wikipedia/commons/6/60/Naxos_Taverna.jpg",
-    # Source: https://commons.wikimedia.org/wiki/File:The_Coleoptera_of_the_British_islands_(Plate_125)_(8592917784).jpg
-    "https://upload.wikimedia.org/wikipedia/commons/1/1b/The_Coleoptera_of_the_British_islands_%28Plate_125%29_%288592917784%29.jpg",
-    # By Américo Toledano, Source: https://commons.wikimedia.org/wiki/File:Biblioteca_Maim%C3%B3nides,_Campus_Universitario_de_Rabanales_007.jpg
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Biblioteca_Maim%C3%B3nides%2C_Campus_Universitario_de_Rabanales_007.jpg/1024px-Biblioteca_Maim%C3%B3nides%2C_Campus_Universitario_de_Rabanales_007.jpg",
-    # Source: https://commons.wikimedia.org/wiki/File:The_smaller_British_birds_(8053836633).jpg
-    "https://upload.wikimedia.org/wikipedia/commons/0/09/The_smaller_British_birds_%288053836633%29.jpg",
-]
 
 
 # https://tfhub.dev/tensorflow/collections/object_detection/1
@@ -99,17 +84,6 @@ all_modules = {
         },
     },
 }
-
-def load_image_json():
-  image_file_path = os.getenv('IMAGE_FILE_PATH')
-  if image_file_path is not None:
-    print("loading image from file path: ", image_file_path)
-    with open(image_file_path, 'r') as fh:
-      image_urls_json = json.load(fh)
-    
-    return image_urls + image_urls_json['images']
-  else:
-    return image_urls
 
 def plot_to_image(figure):
   """Converts the matplotlib plot specified by 'figure' to a PNG image and
@@ -327,7 +301,7 @@ def load_category_index(path_to_labels=None):
 def run_detect_all():
   # Download and resize all images.
   image_paths = []
-  all_image_urls = load_image_json()
+  all_image_urls = image_utils.load_image_json()
 
   for image_url in all_image_urls:
     image_paths.append(download_and_resize_image(image_url, 1280, 720))

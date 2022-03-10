@@ -2,3 +2,5 @@ tensorflow>=2.0.0
 tensorflow-hub
 matplotlib
 tensorboard
+keras-ocr
+opencv-python-headless
