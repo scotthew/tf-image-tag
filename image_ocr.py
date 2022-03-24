@@ -53,7 +53,10 @@ prediction_groups = pipeline.recognize(test_images, detection_kwargs={
 #         print(y[0])
 
 # Plot the predictions
-fig, axs = plt.subplots(nrows=len(images), figsize=(20, 20))
+#fig, axs = plt.subplots(nrows=len(images), figsize=(20, 20))
+fig, axs = plt.subplots(nrows=len(images), figsize=(100, 100))
+
+#https://stackoverflow.com/questions/4325733/save-a-subplot-in-matplotlib
 for i, (ax, image, predictions) in enumerate(zip(axs, images, prediction_groups)):
     keras_ocr.tools.drawAnnotations(
         image=image, predictions=predictions, ax=ax)
@@ -67,5 +70,8 @@ for i, (ax, image, predictions) in enumerate(zip(axs, images, prediction_groups)
         print(prediction[0])
     # image_utils.save_image(PATH_TO_TEST_IMAGES_OUT_DIR,
     #                        f'{i}.jpg', image)
-    image_utils.save_fig(PATH_TO_TEST_IMAGES_OUT_DIR,
-                         f'{i}.png', ax)
+    # extent = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    # fig.savefig('ax2_figure.png', bbox_inches=extent)
+
+image_utils.save_fig(PATH_TO_TEST_IMAGES_OUT_DIR,
+                        f'keras_ocr_results.png', fig)
